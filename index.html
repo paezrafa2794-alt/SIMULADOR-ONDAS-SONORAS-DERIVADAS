@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tu canción y sus derivadas: f(t), f′(t), f″(t)</title>
+<style>
+:root{--bg:#eef1f2;--fg:#15201f;--mut:#566663;--card:#fbfcfc;--bd:#cdd6d5;--ac:#0b6e6a;--ax:#3b4a48;--c0:#0b6e6a;--c1:#c2570c;--c2:#6b46c1;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1514;--fg:#e4ecea;--mut:#8fa29f;--card:#162120;--bd:#2c3d3b;--ac:#4fd1c5;--ax:#b5c6c3;--c0:#4fd1c5;--c1:#ffa45c;--c2:#b9a2ff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1514;--fg:#e4ecea;--mut:#8fa29f;--card:#162120;--bd:#2c3d3b;--ac:#4fd1c5;--ax:#b5c6c3;--c0:#4fd1c5;--c1:#ffa45c;--c2:#b9a2ff;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:20px 16px 40px}
+h1{font:600 1.6rem/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
+.sub{color:var(--mut);margin:0 0 16px;max-width:70ch}
+.card,.bar{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.bar{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:end}
+label{display:flex;flex-direction:column;font-size:.8rem;color:var(--mut);gap:3px}
+input,select,button{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:5px 8px}
+input[type=number]{width:96px}input[type=range]{padding:0;width:min(280px,70vw)}input[type=file]{max-width:230px}
+button{cursor:pointer}button:hover:not(:disabled){border-color:var(--ac)}button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.fbtn{display:inline-block;padding:11px 18px;background:var(--ac);color:var(--card);border-radius:8px;font-weight:600;font-size:.95rem;cursor:pointer}
+.sr{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.pre{display:flex;gap:6px}
+#st{color:var(--mut);font-size:.85rem;margin:0 0 12px;min-height:1.3em}
+#tl{font-weight:600;margin:0 0 8px}
+.vals{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.v{border-left:4px solid var(--c);padding:2px 0 2px 10px}
+.v b{display:block;font-size:.85rem;color:var(--mut);font-weight:600}
+.num{display:block;font:600 1.25rem/1.3 ui-monospace,Menlo,Consolas,monospace;color:var(--c)}
+.txt{display:block;font-size:.85rem}
+.g h2{font-size:1rem;margin:0 0 2px;font-weight:600;display:flex;align-items:center;gap:8px}
+.dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+.cap{margin:0 0 4px;color:var(--mut);font-size:.88rem}
+.ro{font:.8rem/1.4 ui-monospace,Menlo,Consolas,monospace;min-height:1.3em;overflow-wrap:anywhere}
+canvas{width:100%;height:215px;display:block;touch-action:pan-y;cursor:crosshair;border-radius:6px}
+.help{color:var(--mut);font-size:.85rem;max-width:80ch}
+</style>
+</head>
+<body>
+<main>
+<h1>Tu canción y sus derivadas</h1>
+<p class="sub">Carga tu canción favorita, elige un instante y observa la función f(t), su primera derivada f′(t) y su segunda derivada f″(t) en ese momento.</p>
+
+<div class="bar">
+  <div><label class="fbtn" for="file">1. Elegir canción</label><input type="file" id="file" class="sr"></div>
+  <label>2. Instante a evaluar
+    <span class="pre"><button class="pb" data-t="30">30 s</button><button class="pb" data-t="60">60 s</button><button class="pb" data-t="90">90 s</button></span></label>
+  <label>o escribe t (s)<input type="number" id="tin" value="30" min="0" step="0.001"></label>
+  <label>Zona que se ve
+    <select id="win"><option value="0.005">5 ms</option><option value="0.01">10 ms</option><option value="0.02">20 ms</option><option value="0.05" selected>50 ms</option><option value="0.1">0,1 s</option><option value="0.5">0,5 s</option><option value="2">2 s</option></select></label>
+  <label>Paso h de la derivada
+    <select id="h"><option value="1">1 muestra (más exacto)</option><option value="2">2 muestras</option><option value="4" selected>4 muestras</option><option value="8">8 muestras</option><option value="16">16 muestras (más suave)</option></select></label>
+  <button id="play" disabled>▶ Escuchar desde ese instante</button>
+</div>
+<p id="st">Esperando una canción…</p>
+<div class="bar" style="display:block"><input type="range" id="tsl" min="0" max="100" step="0.01" value="30" aria-label="Instante" disabled></div>
+
+<div class="card">
+  <p id="tl">Instante evaluado: —</p>
+  <div class="vals">
+    <div class="v" style="--c:var(--c0)"><b>f(t₀): valor de la función</b><span class="num" id="n0">—</span><span class="txt" id="x0"></span></div>
+    <div class="v" style="--c:var(--c1)"><b>f′(t₀): primera derivada</b><span class="num" id="n1">—</span><span class="txt" id="x1"></span></div>
+    <div class="v" style="--c:var(--c2)"><b>f″(t₀): segunda derivada</b><span class="num" id="n2">—</span><span class="txt" id="x2"></span></div>
+  </div>
+</div>
+
+<section class="card g" data-k="0"><h2><span class="dot" style="background:var(--c0)"></span>f(t): la canción</h2><p class="cap">La amplitud del sonido en cada instante. Es la función original.</p><div class="ro"></div><canvas></canvas></section>
+<section class="card g" data-k="1"><h2><span class="dot" style="background:var(--c1)"></span>f′(t): primera derivada</h2><p class="cap">Qué tan rápido cambia f. Es la pendiente de f: positiva si f sube, negativa si baja y cero en picos y valles.</p><div class="ro"></div><canvas></canvas></section>
+<section class="card g" data-k="2"><h2><span class="dot" style="background:var(--c2)"></span>f″(t): segunda derivada</h2><p class="cap">Qué tan rápido cambia la pendiente. Es positiva donde f se curva hacia arriba (∪) y negativa donde se curva hacia abajo (∩).</p><div class="ro"></div><canvas></canvas></section>
+
+<p class="help">Cómo usarlo: haz clic en cualquier gráfica para evaluar ese instante; la línea punteada y el punto marcan t₀, y la recta naranja o morada es la tangente (su pendiente es la derivada siguiente). Rueda del ratón: zoom en el tiempo. Arrastrar: moverse. Doble clic: volver a centrar. Las derivadas se calculan con diferencias centrales de paso h: f′ ≈ (f(t+h) − f(t−h)) / 2h y f″ ≈ (f(t+h) − 2f(t) + f(t−h)) / h². Un h pequeño es más exacto pero más ruidoso; uno grande suaviza.</p>
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+let data=null,sr=0,dur=0,tc=30,v0=0,v1=.05,cur=null,actx=null,abuf=null,src=null;
+const NM=['f','f′','f″'],MAXS=5;
+const C=[...document.querySelectorAll('.g')].map(s=>({cv:s.querySelector('canvas'),ro:s.querySelector('.ro'),am:1}));
+const H=()=>+$('#h').value;
+const fv=v=>v===0?'0':(Math.abs(v)>=1e4||Math.abs(v)<1e-3)?v.toExponential(2):v.toFixed(Math.abs(v)<1?4:2);
+function fn(k,i){const h=H(),n=data.length,g=j=>j>=0&&j<n?data[j]:0;
+if(k===0)return g(i);
+if(k===1)return(g(i+h)-g(i-h))*sr/(2*h);
+return(g(i+h)-2*g(i)+g(i-h))*sr*sr/(h*h);}
+function ticks(a,b,n){const raw=(b-a)/n,m=Math.pow(10,Math.floor(Math.log10(raw))),r=raw/m;
+const st=(r<1.5?1:r<3.5?2:r<7.5?5:10)*m,out=[];
+for(let i=Math.ceil(a/st-1e-9);i*st<=b+st*1e-9;i++)out.push(i*st);return{out,st};}
+const fmt=(v,st)=>v.toFixed(Math.min(6,Math.max(0,-Math.floor(Math.log10(st)+1e-9))));
+function col(){const s=getComputedStyle(document.documentElement),g=n=>s.getPropertyValue(n).trim();
+return{card:g('--card'),fg:g('--fg'),ax:g('--ax'),bd:g('--bd'),c:[g('--c0'),g('--c1'),g('--c2')]};}
+function zoomRange(a,b,fr,k,lo,hi,min,max){const s=Math.min(hi-lo,max,Math.max(min,(b-a)*k)),c=a+fr*(b-a);
+let n=c-fr*s;n=Math.max(lo,Math.min(hi-s,n));return[n,n+s];}
+function panRange(a,b,d,lo,hi){const s=b-a;let n=a+d*s;n=Math.max(lo,Math.min(hi-s,n));return[n,n+s];}
+const LM=66,RM=12;
+
+function draw(k){
+const o=C[k],cv=o.cv,dpr=window.devicePixelRatio||1,W=cv.clientWidth,Hh=cv.clientHeight;
+cv.width=Math.round(W*dpr);cv.height=Math.round(Hh*dpr);
+const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
+const q=col(),T=10,B=26,pw=W-LM-RM,ph=Hh-T-B;
+g.fillStyle=q.card;g.fillRect(0,0,W,Hh);g.font='12px ui-monospace,Menlo,Consolas,monospace';g.textBaseline='middle';
+if(!data){g.fillStyle=q.ax;g.textAlign='center';g.fillText('Carga una canción para ver la gráfica',W/2,Hh/2);return;}
+const span=v1-v0,xs=t=>LM+(t-v0)/span*pw,spp=span*sr/pw;
+const a0=Math.max(0,Math.floor(v0*sr)),a1=Math.min(data.length,Math.ceil(v1*sr));
+let pk=0;for(let i=a0;i<a1;i++){const v=Math.abs(fn(k,i));if(v>pk)pk=v;}
+const am=o.am=Math.max(pk*1.1,1e-9),ay=v=>T+ph/2*(1-v/am);
+const tk=ticks(v0,v1,Math.max(3,Math.floor(pw/90)));
+g.textAlign='center';tk.out.forEach(t=>{const x=Math.round(xs(t))+.5;g.save();g.globalAlpha=.2;g.strokeStyle=q.ax;g.beginPath();g.moveTo(x,T);g.lineTo(x,T+ph);g.stroke();g.restore();
+g.fillStyle=q.ax;g.fillText(fmt(t,tk.st),x,T+ph+13);});
+g.save();g.globalAlpha=.35;g.strokeStyle=q.ax;g.beginPath();g.moveTo(LM,ay(0));g.lineTo(LM+pw,ay(0));g.stroke();g.restore();
+g.strokeStyle=q.bd;g.strokeRect(LM+.5,T+.5,pw,ph);
+g.fillStyle=q.ax;g.textAlign='right';[am,0,-am].forEach(v=>g.fillText(fv(v),LM-6,Math.min(T+ph-6,Math.max(T+6,ay(v)))));
+g.textAlign='left';g.fillText('t (s)',LM+pw-34,T+ph-10);
+// curva
+g.save();g.beginPath();g.rect(LM,T,pw,ph);g.clip();
+g.strokeStyle=g.fillStyle=q.c[k];g.lineWidth=1.4;g.beginPath();
+if(spp<3){let f=true;for(let s=a0-1;s<=a1+1;s++){if(s<0||s>=data.length)continue;const x=xs(s/sr),y=ay(fn(k,s));f?g.moveTo(x,y):g.lineTo(x,y);f=false;}
+g.stroke();if(spp<1)for(let s=a0;s<a1;s++)g.fillRect(xs(s/sr)-2,ay(fn(k,s))-2,4,4);}
+else{g.lineWidth=1;for(let x=0;x<pw;x++){const a=Math.max(0,Math.floor((v0+x/pw*span)*sr)),b=Math.min(data.length,Math.max(a+1,Math.floor((v0+(x+1)/pw*span)*sr)));
+let mn=1e30,mx=-1e30;for(let s=a;s<b;s++){const v=fn(k,s);if(v<mn)mn=v;if(v>mx)mx=v;}
+if(mn<=mx){g.moveTo(LM+x+.5,ay(mx));g.lineTo(LM+x+.5,Math.max(ay(mn),ay(mx)+1));}}g.stroke();}
+// instante evaluado, punto y tangente
+if(tc>=v0&&tc<=v1){const i=Math.round(tc*sr),x=xs(i/sr),y=ay(fn(k,i));
+g.save();g.setLineDash([5,4]);g.strokeStyle=q.fg;g.globalAlpha=.7;g.lineWidth=1.2;g.beginPath();g.moveTo(x,T);g.lineTo(x,T+ph);g.stroke();g.restore();
+if(k<2){const sl=fn(k+1,i),dt=span*.09;g.strokeStyle=q.c[k+1];g.lineWidth=2.2;g.beginPath();g.moveTo(xs(i/sr-dt),ay(fn(k,i)-sl*dt));g.lineTo(xs(i/sr+dt),ay(fn(k,i)+sl*dt));g.stroke();}
+g.fillStyle=q.fg;g.beginPath();g.arc(x,y,4.5,0,7);g.fill();g.strokeStyle=q.card;g.lineWidth=1.5;g.stroke();}
+// cursor
+if(cur!=null&&cur>=v0&&cur<=v1){const x=xs(cur);g.strokeStyle=q.fg;g.globalAlpha=.45;g.lineWidth=1;g.beginPath();g.moveTo(x,T);g.lineTo(x,T+ph);g.stroke();g.globalAlpha=1;}
+g.restore();
+o.ro.textContent=(cur!=null&&cur>=v0&&cur<=v1)?'En el cursor: t = '+cur.toFixed(5)+' s   ·   '+NM[k]+'(t) = '+fv(fn(k,Math.round(cur*sr))):'';}
+
+function vals(){if(!data)return;
+const i=Math.round(tc*sr),a=[0,1,2].map(k=>fn(k,i)),e=k=>.03*C[k].am/1.1;
+$('#tl').textContent='Instante evaluado: t₀ = '+tc.toFixed(5)+' s (muestra n = '+i+')';
+$('#n0').textContent=fv(a[0]);$('#n1').textContent=fv(a[1])+' /s';$('#n2').textContent=fv(a[2])+' /s²';
+$('#x0').textContent=a[0]>e(0)?'La señal está por encima del reposo.':a[0]<-e(0)?'La señal está por debajo del reposo.':'La señal pasa cerca del reposo (cero).';
+$('#x1').textContent=Math.abs(a[1])<e(1)?'Pendiente casi 0: f está en un pico, un valle o una zona plana.':a[1]>0?'Pendiente positiva: f está subiendo.':'Pendiente negativa: f está bajando.';
+$('#x2').textContent=Math.abs(a[2])<e(2)?'Curvatura casi 0: tramo recto o punto de inflexión.':a[2]>0?'Positiva: f se curva hacia arriba (∪) y la pendiente aumenta.':'Negativa: f se curva hacia abajo (∩) y la pendiente disminuye.';}
+
+let raf=0;
+function render(){raf=0;C.forEach((_,k)=>draw(k));vals();}
+const sched=()=>{if(!raf)raf=requestAnimationFrame(render);};
+
+function setT(t,center){if(!data)return;tc=Math.min(dur,Math.max(0,t));
+$('#tin').value=tc.toFixed(3);$('#tsl').value=tc;
+if(center){const s=v1-v0;let n=tc-s/2;n=Math.max(0,Math.min(dur-s,n));v0=n;v1=n+s;}sched();}
+function setWin(){if(!data)return;const s=Math.min(dur,+$('#win').value);v0=tc-s/2;v1=v0+s;
+if(v0<0){v0=0;v1=s;}if(v1>dur){v1=dur;v0=dur-s;}sched();}
+
+C.forEach(o=>{const cv=o.cv;let drag=null;
+const tAt=x=>{const pw=cv.clientWidth-LM-RM;return v0+(x-LM)/pw*(v1-v0);};
+const inside=x=>x>=LM&&x<=cv.clientWidth-RM;
+cv.addEventListener('wheel',e=>{if(!data)return;e.preventDefault();const pw=cv.clientWidth-LM-RM,fr=Math.min(1,Math.max(0,(e.offsetX-LM)/pw));
+[v0,v1]=zoomRange(v0,v1,fr,e.deltaY>0?1.25:.8,0,dur,64/sr,MAXS);sched();},{passive:false});
+cv.addEventListener('pointerdown',e=>{if(!data)return;cv.setPointerCapture(e.pointerId);drag={x:e.offsetX,sx:e.offsetX,moved:false};});
+cv.addEventListener('pointermove',e=>{const x=e.offsetX;cur=data&&inside(x)?Math.min(dur,Math.max(0,tAt(x))):null;
+if(drag){if(Math.abs(x-drag.sx)>4)drag.moved=true;if(drag.moved){const pw=cv.clientWidth-LM-RM;[v0,v1]=panRange(v0,v1,-(x-drag.x)/pw,0,dur);drag.x=x;}}sched();});
+cv.addEventListener('pointerup',e=>{if(drag&&!drag.moved&&inside(e.offsetX))setT(tAt(e.offsetX),false);drag=null;});
+cv.addEventListener('pointerleave',()=>{cur=null;sched();});
+cv.addEventListener('dblclick',()=>setWin());});
+
+document.querySelectorAll('.pb').forEach(b=>b.addEventListener('click',()=>{setT(+b.dataset.t,true);}));
+$('#tin').addEventListener('change',e=>setT(+e.target.value||0,true));
+$('#tsl').addEventListener('input',e=>setT(+e.target.value,true));
+$('#win').addEventListener('change',setWin);
+$('#h').addEventListener('change',sched);
+window.addEventListener('resize',sched);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',sched);
+
+$('#play').addEventListener('click',()=>{const b=$('#play'),lab='▶ Escuchar desde ese instante';
+if(src){const s=src;src=null;s.stop();b.textContent=lab;return;}
+actx.resume();const s=actx.createBufferSource();s.buffer=abuf;s.connect(actx.destination);
+s.onended=()=>{if(src===s){src=null;b.textContent=lab;}};src=s;s.start(0,tc,8);b.textContent='■ Detener';});
+
+async function load(file){
+$('#st').textContent='Decodificando «'+file.name+'»…';
+try{if(src){src.stop();src=null;}actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+const ab=await file.arrayBuffer();abuf=await new Promise((res,rej)=>{const p=actx.decodeAudioData(ab,res,rej);if(p&&p.catch)p.catch(rej);});
+sr=abuf.sampleRate;dur=abuf.duration;const n=abuf.length,ch=abuf.numberOfChannels;data=new Float32Array(n);
+for(let c=0;c<ch;c++){const d=abuf.getChannelData(c);for(let i=0;i<n;i++)data[i]+=d[i]/ch;}
+$('#tsl').max=dur;$('#tsl').disabled=false;$('#tin').max=dur;$('#play').disabled=false;
+document.querySelectorAll('.pb').forEach(b=>b.disabled=+b.dataset.t>dur);
+$('#st').textContent=file.name+' — duración '+dur.toFixed(2)+' s, fs = '+sr+' Hz (se mezcla a mono).';
+const t=dur>=30?30:dur/2;v0=0;v1=Math.min(dur,+$('#win').value);setT(t,true);setWin();}
+catch(err){data=null;$('#st').textContent='No se pudo leer el archivo. Prueba con MP3, WAV o M4A.'+(err&&err.message?' Detalle: '+err.message:'');sched();}}
+$('#file').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(f)load(f);});
+sched();
+</script>
+</body>
+</html>
